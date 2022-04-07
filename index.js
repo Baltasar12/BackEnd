@@ -1,61 +1,79 @@
-class Archivo {
-    fs = require("fs");
-  
-    constructor(file) {
-      this.file = file;
-      this.codif = "utf-8";
-    }
-  
-    async guardar(productoNuevo) {
-      const data = await this.leer();
-      productoNuevo.id = data.length + 1;
-      data.push(productoNuevo);
-      try {
-        await this.fs.promises.writeFile(
-          this.file,
-          JSON.stringify(data, null, "\t")
-        );
-      } catch (error) {
-        console.log("el archivo no se pudo guardar", error);
-      }
-    }
-  
-    async leer() {
-      try {
-        let data = await this.fs.promises.readFile(`./${this.file}`, this.codif);
-        return JSON.parse(data);
-      } catch {
-        return [];
-      }
-    }
-  
-    async borrar() {
-      try {
-        await this.fs.promises.unlink(`./${this.file}`);
-      } catch (error) {
-        console.log("no se pudo borrar el archivo", error);
-      }
-    }
-  }
-  
-  //Crea producto
-  class Producto {
-    constructor(title, price, thumbnail) {
-      (this.title = title), (this.price = price), (this.thumbnail = thumbnail);
-    }
-  }
-  
-  const generaArchivo = async () => {
-    const itemNuevo1 = new Producto("Teclado", 4500.55, "https://m.media-amazon.com/images/I/81vl4qsTwTL._AC_SY450_.jpg");
-    const itemNuevo2 = new Producto("Mouse", 2500.20, "https://www.logitech.com/content/dam/logitech/en/products/mice/m171/gallery/m171-gallery-grey-1.png");
-    const itemNuevo3 = new Producto("Auriculares", 9500.22, "https://co.jbl.com/dw/image/v2/AAUJ_PRD/on/demandware.static/-/Sites-masterCatalog_Harman/default/dw5b7fa15b/JBL_Quantum_400_Product%20Image_Hero%2002.png?sw=537&sfrm=png");
-  
-    const rutaArchivo = new Archivo("productos.txt");
-  
-    await rutaArchivo.guardar(itemNuevo1);
-    await rutaArchivo.guardar(itemNuevo2);
-    await rutaArchivo.guardar(itemNuevo3);
-  
-  };
-  
-  generaArchivo();
+//imports
+const express = require("express")
+const fs = require("fs")
+
+const app = express()
+const port = 8080
+
+//lectura texto
+let data = fs.readFileSync('./productos.txt', 'utf-8')
+let productos = JSON.parse(data)
+let productosTotal = JSON.parse(data)
+
+let listadoNombres = []
+let arrayProductos = () => {
+    productosTotal.forEach(e => {
+        listadoNombres.push(e.title) 
+    });
+    productosTotal = []
+    return listadoNombres
+}
+
+let numeroRandom = () => {
+    let numero = Math.floor(Math.random() * (productos.length))
+    return numero
+};
+
+let contador1 = 0
+let contador2 = 0
+
+
+//ruta items
+app.get('/items',(req, res) => {  
+    contador1++
+    let respuesta =`
+        <html>
+            <body>
+                <p>
+                {items: ${arrayProductos()}, cantidad: ${productos.length}}
+                </p>
+            </body>
+        </html>
+        `
+    res.send(respuesta)
+})
+
+//ruta item random
+app.get('/item-random',(req, res) => {
+    contador2++
+    let respuesta =`
+        <html>
+            <body>
+                <p>
+                {item: ${JSON.stringify(productos[numeroRandom()])}}
+                </p>
+            </body>
+        </html>
+        `
+        res.send(respuesta)
+    })  
+
+// ruta visitas
+app.get('/visitas',(req, res) => {
+    let respuesta =`
+<html>
+    <body>
+        {
+            visitas:
+            {item1: ${contador1}}
+            {item2: ${contador2}}
+        }
+        </p>
+    </body>
+</html>
+`
+        res.send(respuesta)
+    })
+
+// servidor
+app.listen(port, () => console.log(`server at http://localhost:${port}`))
