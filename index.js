@@ -1,79 +1,34 @@
-//imports
-const express = require("express")
-const fs = require("fs")
+const express = require("express");
+const Productos = require("./products");
 
-const app = express()
-const port = 8080
+const puerto = 8080;
+const app = express();
 
-//lectura texto
-let data = fs.readFileSync('./productos.txt', 'utf-8')
-let productos = JSON.parse(data)
-let productosTotal = JSON.parse(data)
+app.use(express.json());
 
-let listadoNombres = []
-let arrayProductos = () => {
-    productosTotal.forEach(e => {
-        listadoNombres.push(e.title) 
-    });
-    productosTotal = []
-    return listadoNombres
-}
+//GET listado completo de productos
+app.get("/api/productos", (req, res) => {
+  res.json(Productos.leerProductos());
+});
 
-let numeroRandom = () => {
-    let numero = Math.floor(Math.random() * (productos.length))
-    return numero
-};
+//GET producto por ID enviado x params
+app.get("/api/productos/:id", (req, res) => {
+  //Llamo al metodo leer x ID del modulo productos pasando el id como parametro
+  res.json(Productos.leerProductosConId(req.params.id));
+});
 
-let contador1 = 0
-let contador2 = 0
+//POST de un producto nuevo sin ID
+app.post("/api/productos", (req, res) => {
+  //almaceno el producto retornado de la request en una variable
+  let prodGuardado = Productos.productoNuevo(req.body);
+  //respondo con el producto nuevo creado y el id asignado
+  res.send(prodGuardado);
+});
 
+const server = app.listen(puerto, () => {
+  console.log(`servidor escuchando en http://localhost:${puerto}`);
+});
 
-//ruta items
-app.get('/items',(req, res) => {  
-    contador1++
-    let respuesta =`
-        <html>
-            <body>
-                <p>
-                {items: ${arrayProductos()}, cantidad: ${productos.length}}
-                </p>
-            </body>
-        </html>
-        `
-    res.send(respuesta)
-})
-
-//ruta item random
-app.get('/item-random',(req, res) => {
-    contador2++
-    let respuesta =`
-        <html>
-            <body>
-                <p>
-                {item: ${JSON.stringify(productos[numeroRandom()])}}
-                </p>
-            </body>
-        </html>
-        `
-        res.send(respuesta)
-    })  
-
-// ruta visitas
-app.get('/visitas',(req, res) => {
-    let respuesta =`
-<html>
-    <body>
-        {
-            visitas:
-            {item1: ${contador1}}
-            {item2: ${contador2}}
-        }
-        </p>
-    </body>
-</html>
-`
-        res.send(respuesta)
-    })
-
-// servidor
-app.listen(port, () => console.log(`server at http://localhost:${port}`))
+server.on("error", (error) => {
+  console.log("error en el servidor:", error);
+});
